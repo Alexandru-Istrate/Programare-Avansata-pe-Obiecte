@@ -5,7 +5,7 @@ import java.util.*;
 
 public final class AplicatieBancara {
 
-    public static final class Client implements Comparable {
+    public static final class Client implements Comparable<Client> {
 
         private String nume;
 
@@ -35,6 +35,10 @@ public final class AplicatieBancara {
             return ContBancar.deschideCont(this, banca);
         }
 
+        public ContBancar creeazaCont(Banca banca, String iban){
+            return ContBancar.deschideCont(this, banca, new StringBuilder(iban));
+        }
+
         void adaugaContBancar(ContBancar contBancar){
             conturiBancare.add(contBancar);
         }
@@ -51,6 +55,15 @@ public final class AplicatieBancara {
         public Card creeazaCard(ContBancar contBancar) {
             if (contBancar.getProprietar() == this) {
                 return Card.creeazaCard(this, contBancar);
+            } else {
+                System.out.println("*** Acest client nu este proprietarul contului ***");
+                return null;
+            }
+        }
+
+        public Card creeazaCard(ContBancar contBancar, String numarCard) {
+            if (contBancar.getProprietar() == this) {
+                return Card.creeazaCard(this, contBancar, new StringBuilder(numarCard));
             } else {
                 System.out.println("*** Acest client nu este proprietarul contului ***");
                 return null;
@@ -141,10 +154,10 @@ public final class AplicatieBancara {
         }
 
         @Override
-        public int compareTo(Object o) {
-            Client other = (Client) o;
+        public int compareTo(Client other) {
             return this.nume.compareTo(other.nume);
         }
+
 
         @Override
         public String toString() {
@@ -246,7 +259,7 @@ public final class AplicatieBancara {
 
     }
 
-    public final static class ContBancar implements Comparable {
+    public final static class ContBancar implements Comparable<ContBancar>{
         private final StringBuilder iban;
         private final Client proprietar;
         private final Banca banca;
@@ -264,6 +277,23 @@ public final class AplicatieBancara {
             this.extrasCont = new ExtrasCont();
             client.adaugaContBancar(this);
             banca.adaugaContClientului(client, this);
+        }
+
+        private ContBancar(Client client, Banca banca, StringBuilder iban) {
+            this.proprietar = client;
+            this.banca = banca;
+            this.iban = iban;
+            this.carduri = new ArrayList<>();
+            this.extrasCont = new ExtrasCont();
+            client.adaugaContBancar(this);
+            banca.adaugaContClientului(client, this);
+        }
+
+        static ContBancar deschideCont(Client client, Banca banca){
+            return new ContBancar(client, banca);
+        }
+        static ContBancar deschideCont(Client client, Banca banca, StringBuilder iban){
+            return new ContBancar(client, banca, iban);
         }
 
          Client getProprietar() {
@@ -294,18 +324,12 @@ public final class AplicatieBancara {
             this.soldCurent = soldCurent;
         }
 
-
-        static ContBancar deschideCont(Client client, Banca banca){
-            return new ContBancar(client, banca);
-        }
-
         void adaugaCard(Card card){
             carduri.add(card);
         }
 
         @Override
-        public int compareTo(Object o) {
-            ContBancar other = (ContBancar) o;
+        public int compareTo(ContBancar other) {
             return Double.compare(this.soldCurent, other.soldCurent);
         }
 
@@ -357,6 +381,35 @@ public final class AplicatieBancara {
             System.out.println("*** Acest client nu este proprietarul contului. Operatia creeazaCard a returnat null ***");
             return null;
         }
+
+        private Card(ContBancar contBancar, StringBuilder numarCard) {
+            this.contBancar = contBancar;
+            this.numarCard = numarCard;
+            this.dataExpirare = LocalDate.now().plusYears(4);
+            this.cvv = GeneratorRandom.genereazaCvv();
+            contBancar.adaugaCard(this);
+        }
+
+        static Card creeazaCard(Client client, ContBancar contBancar, StringBuilder numarCard){
+            if(contBancar.getProprietar() == client){
+                return new Card(contBancar, numarCard);
+            }
+            System.out.println("*** Acest client nu este proprietarul contului. Operatia creeazaCard a returnat null ***");
+            return null;
+        }
+
+         StringBuilder getNumarCard() {
+            return numarCard;
+        }
+
+         LocalDate getDataExpirare() {
+            return dataExpirare;
+        }
+
+         StringBuilder getCvv() {
+            return cvv;
+        }
+
         ContBancar getContBancar() {
             return contBancar;
         }

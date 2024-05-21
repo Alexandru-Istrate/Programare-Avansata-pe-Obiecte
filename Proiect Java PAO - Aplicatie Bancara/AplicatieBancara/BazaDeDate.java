@@ -1,55 +1,100 @@
 package AplicatieBancara;
+import com.opencsv.CSVWriter;
+
+import java.io.File;
+import java.io.FileWriter;
 import java.sql.*;
+import java.time.Instant;
 
 public class BazaDeDate {
     private static BazaDeDate instanta;
     private Connection connection;
 
+    private CSVWriter csvWriter;
 
 
-    private BazaDeDate(String url){
+
+    private BazaDeDate(String url, String pathToCsvFile){
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
+            boolean newFile = false;
             this.connection = DriverManager.getConnection(url);
+            File csvFile = new File(pathToCsvFile);
+            if (!csvFile.exists()) {
+                csvFile.createNewFile();
+                newFile = true;
+            }
+            FileWriter fileWriter = new FileWriter(pathToCsvFile, true);
+            this.csvWriter = new CSVWriter(fileWriter);
+            if(newFile){
+                initializeazaCsv();
+            }
         }
         catch(Exception e){
+            System.out.println("A aparut o problema la instantierea clasei BazaDeDate");
             e.printStackTrace();
         }
     }
 
-    private BazaDeDate(String url, String user, String password){
+    private BazaDeDate(String url, String user, String password, String pathToCsvFile){
         try {
+            boolean newFile = false;
             this.connection = DriverManager.getConnection(url, user, password);
+            File csvFile = new File(pathToCsvFile);
+            if (!csvFile.exists()) {
+                csvFile.createNewFile();
+                newFile = true;
+            }
+            FileWriter fileWriter = new FileWriter(pathToCsvFile, true);
+            this.csvWriter = new CSVWriter(fileWriter);
+            if(newFile){
+                initializeazaCsv();
+            }
         }
-        catch(SQLException e){
+            catch(Exception e){
+            System.out.println("A aparut o problema la instantierea clasei BazaDeDate");
             e.printStackTrace();
         }
     }
 
-    public static BazaDeDate getInstanta(String url){
+    public static BazaDeDate getInstanta(String url, String pathToCsvFile){
         if (instanta == null){
-            instanta = new BazaDeDate(url);
+            instanta = new BazaDeDate(url, pathToCsvFile);
         }
         return instanta;
     }
 
-    public static BazaDeDate getInstanta(String url, String user, String password){
+    public static BazaDeDate getInstanta(String url, String user, String password, String pathToCsvFile){
         if (instanta == null){
-            instanta = new BazaDeDate(url, user, password);
+            instanta = new BazaDeDate(url, user, password, pathToCsvFile);
         }
         return instanta;
+    }
+
+    private void initializeazaCsv(){
+        try {
+            String[] header = {"nume_actiune", "timestamp"};
+            csvWriter.writeNext(header);
+            csvWriter.flush();
+        }
+        catch(Exception e){
+            System.out.println("A aparut o eroare la initilaizarea fisierului csv");
+            e.printStackTrace();
+        }
     }
 
     public void insereazaBanca(AplicatieBancara.Banca banca){
         try {
-
             String query = "INSERT INTO banci VALUES(?, ?)";
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, banca.getCodBanca());
             statement.setString(2, banca.getDenumire());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Inserare banca", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la inserare banca");
             e.printStackTrace();
         }
@@ -62,8 +107,12 @@ public class BazaDeDate {
             statement.setString(1, client.getCnp());
             statement.setString(2, client.getNume());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Inserare client", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la inserare client");
             e.printStackTrace();
         }
@@ -78,8 +127,12 @@ public class BazaDeDate {
             statement.setString(3, contBancar.getProprietar().getCnp());
             statement.setDouble(4, contBancar.getSoldCurent());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Inserare cont bancar", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la inserare cont bancar");
             e.printStackTrace();
         }
@@ -94,8 +147,12 @@ public class BazaDeDate {
             statement.setDate(3, Date.valueOf(card.getDataExpirare()));
             statement.setString(4, card.getContBancar().getIban().toString());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Inserare card", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la inserare card");
             e.printStackTrace();
         }
@@ -107,8 +164,12 @@ public class BazaDeDate {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, banca.getCodBanca());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Stergere banca", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la stergere banca");
             e.printStackTrace();
         }
@@ -120,8 +181,12 @@ public class BazaDeDate {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, client.getCnp());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Stergere client", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la stergere client");
             e.printStackTrace();
         }
@@ -133,8 +198,12 @@ public class BazaDeDate {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, contBancar.getIban().toString());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Stergere cont bancar", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la stergere cont bancar");
             e.printStackTrace();
         }
@@ -146,8 +215,12 @@ public class BazaDeDate {
             PreparedStatement statement = connection.prepareStatement(query);
             statement.setString(1, card.getNumarCard().toString());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Stergere card", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch(SQLException e){
+        catch(Exception e){
             System.out.println("A aparut o problema la stergere cont bancar");
             e.printStackTrace();
         }
@@ -162,8 +235,12 @@ public class BazaDeDate {
             statement.setDouble(1, contBancar.getSoldCurent());
             statement.setString(2, contBancar.getIban().toString());
             statement.executeUpdate();
+
+            String[] addToCsv = {"Actualizare sold", Instant.now().toString()};
+            csvWriter.writeNext(addToCsv);
+            csvWriter.flush();
         }
-        catch (SQLException e){
+        catch (Exception e){
             System.out.println("A aparut o problema la actualizare sold");
             e.printStackTrace();
         }
